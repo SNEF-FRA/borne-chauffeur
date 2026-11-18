@@ -1,0 +1,24 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+publish/
+
+# Node / Vite
+node_modules/
+web/dist/
+*.local
+
+# Configuration locale (jamais de mot de passe dans le dépôt)
+appsettings.Local.json
+appsettings.*.Local.json
+.env
+.env.*
+
+# Divers
+.DS_Store
+Thumbs.db
+*.log
