@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Règles métier pures : aucune dépendance, testables sans base de données. -->
+  <PropertyGroup>
+    <RootNamespace>Dpl.Borne.Domain</RootNamespace>
+  </PropertyGroup>
+</Project>
