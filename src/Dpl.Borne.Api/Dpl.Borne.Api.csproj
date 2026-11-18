@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>Dpl.Borne.Api</RootNamespace>
+    <AssemblyName>Dpl.Borne.Api</AssemblyName>
+    <!-- AvecSql=false compile l'API sans l'accès SQL Server (mode démonstration seul, sans paquet NuGet). -->
+    <AvecSql Condition="'$(AvecSql)' == ''">true</AvecSql>
+    <DefineConstants Condition="'$(AvecSql)' == 'true'">$(DefineConstants);AVEC_SQL</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(AvecSql)' == 'true'">
+    <PackageReference Include="Dapper" Version="2.1.35" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.2" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(AvecSql)' != 'true'">
+    <Compile Remove="Donnees/Sql/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dpl.Borne.Domain\Dpl.Borne.Domain.csproj" />
+  </ItemGroup>
+</Project>
