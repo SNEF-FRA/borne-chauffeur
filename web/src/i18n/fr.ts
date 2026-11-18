@@ -1,5 +1,6 @@
 // Textes de la borne en français (langue de référence). Les autres langues reprennent les mêmes clés.
 type P = Record<string, string | number | null | undefined>
+const dans = (j: P[string]) => (Number(j) === 0 ? 'aujourd’hui' : Number(j) === 1 ? 'demain' : `dans ${j} jours`)
 const minuscule = (v: P[string]) => { const s = String(v ?? ''); return s.charAt(0).toLowerCase() + s.slice(1) }
 
 export const fr = {
@@ -173,12 +174,12 @@ export const fr = {
   controle: {
     ADR_ABSENT: () => 'Habilitation ADR non renseignée',
     ADR_EXPIRE: (p: P) => `Habilitation ADR expirée depuis le ${p.date}`,
-    ADR_BIENTOT: (p: P) => `Votre habilitation ADR expire dans ${p.jours} jour(s) (${p.date}). Pensez à la renouveler.`,
+    ADR_BIENTOT: (p: P) => `Votre habilitation ADR expire ${dans(p.jours)} (${p.date}). Pensez à la renouveler.`,
     ACCUEIL_ABSENT: () => 'Accueil sécurité non renseigné',
     ACCUEIL_EXPIRE: (p: P) => `Accueil sécurité expiré depuis le ${p.date}`,
-    ACCUEIL_BIENTOT: (p: P) => `Votre accueil sécurité expire dans ${p.jours} jour(s) (${p.date}).`,
+    ACCUEIL_BIENTOT: (p: P) => `Votre accueil sécurité expire ${dans(p.jours)} (${p.date}).`,
     PERMIS_EXPIRE: (p: P) => `Permis de conduire expiré depuis le ${p.date}`,
-    PERMIS_BIENTOT: (p: P) => `Votre permis expire dans ${p.jours} jour(s) (${p.date}).`,
+    PERMIS_BIENTOT: (p: P) => `Votre permis expire ${dans(p.jours)} (${p.date}).`,
     CT_EXPIRE: (p: P) => `Contrôle technique de ${p.cible} expiré${p.date ? ` depuis le ${p.date}` : ''}`,
     CT_BIENTOT: (p: P) => `Contrôle technique de ${p.cible} à renouveler avant le ${p.date}.`,
     AGREMENT_ABSENT: (p: P) => `Agrément ADR de ${p.cible} non renseigné`,

@@ -33,6 +33,7 @@ Abandonnés (confirmé le 18/11/2026) : OPC, broker MQTT, redondance serveur.
 - **Plan multi-commandes.** Quand deux lignes partageaient un compartiment, la v1.6 écrivait pour la seconde l'ID_Commande et l'ID_ComProd de la première.
 - **Agrément ADR du porteur.** Il n'était pas contrôlé quand le porteur tirait une remorque.
 - **Poids des retours produit.** La requête de la v1.6 joignait une colonne inexistante (CUVE_RP.ID_PRODUIT) : le poids des restes était toujours 0.
+- **Îlots proposés.** `Sp_IlotsProduits_2` compare le nombre de produits distincts d'un îlot au nombre d'opérations du chargeur : deux lignes du même produit rendaient tous les îlots incompatibles. L'API applique en plus la règle corrigée (tous les produits présents sur des bras en service, énergie GNC/GNL à partir de l'îlot 2).
 - **Question GNV.** Elle était posée à tous les véhicules ; elle ne l'est plus qu'aux énergies à mesures complémentaires (GNC, GNL).
 - **Requêtes SQL.** Toutes paramétrées (fin des injections SQL possibles) ; identifiants MAX+1 calculés sous verrou dans une transaction, avec nouvel essai en cas de conflit.
 - **Mot de passe.** Plus de compte `sa` ni de mot de passe dans les fichiers livrés.
@@ -53,7 +54,8 @@ Abandonnés (confirmé le 18/11/2026) : OPC, broker MQTT, redondance serveur.
 
 ## Constats sur la base, hors application
 
-- Le déclencheur `ActualisationQuotas` appelle `Sp_MajVolChgtStk`, absente de la base (confirmé le 18/11/2026) : toute mise à jour de `Quota` est annulée. Les réservations temporaires de quota n'ont donc aucun effet, en v1.6 comme ici ; l'API le journalise et continue.
+- Le déclencheur `ActualisationQuotas` appelle `Sp_MajVolChgtStk`, absente de la base de recette (confirmé le 18/11/2026, à vérifier en production) : toute mise à jour de `Quota` est annulée. Les réservations temporaires de quota n'ont donc aucun effet, en v1.6 comme ici ; l'API le journalise et continue.
+- `Sp_IlotsProduits_2` : comptage des produits erroné (voir ci-dessus) ; la procédure elle-même n'est pas modifiée.
 - Le déclencheur `InsMajSupVehicule` utilise `xp_cmdshell` avec un compte lu dans `PARAMETRES`.
 - Le déclencheur `Update_BrasProdCharger` vise la base `[LoadAndGo]` par son nom.
 

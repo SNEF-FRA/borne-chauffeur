@@ -695,6 +695,14 @@ public sealed class StockageSql(IOptions<OptionsSql> options, IOptions<Parametre
 
         var tableau = (IDictionary<string, object?>?)await c.QueryFirstOrDefaultAsync(Cmd("SELECT TOP 1 * FROM Dashboard", ct: ct));
 
+        // Règle d'énergie de Sp_IlotsProduits_2 : un tracteur ou porteur GNC / GNL ne va pas à l'îlot 1.
+        var energie = await c.ExecuteScalarAsync<int?>(Cmd(
+            """
+            SELECT TOP 1 V.IdEnergieVehicule FROM CHARGEUR_VEHICULE CV JOIN VEHICULE V ON V.ID_VEHICULE = CV.ID_VEHICULE
+            WHERE CV.ID_CHARGEUR = @idChargeur AND V.ID_TYPE IN (1, 2)
+            """, new { idChargeur }, ct: ct));
+        var ilotMinimal = energie is 3 or 4 ? 2 : 1;
+
         return numeros.Select(n =>
         {
             var produitsIlot = bras.Where(b => b.Numero == n).ToList();
@@ -702,7 +710,10 @@ public sealed class StockageSql(IOptions<OptionsSql> options, IOptions<Parametre
             var enAttente = attente.Count(a => a.Selectionne == n || (a.Selectionne is null && IlotsPossibles(a.Possibles).Contains(n)));
             var temps = TempsMoyen(tableau, n);
             var brasLignes = lignes.Select(l => new BrasLigne(l.Litres, produitsIlot.Count(b => b.IdProdCharger == l.IdProdCharger))).ToList();
-            return new IlotCandidat(n, compatibles.Contains(n), manquants, occupes.Contains(n), enAttente, temps, brasLignes);
+            // Sp_IlotsProduits_2 compare le nombre de produits DISTINCTS de l'îlot au nombre d'opérations du chargeur :
+            // deux lignes du même produit rendent tous les îlots incompatibles. On applique donc aussi la règle corrigée.
+            var compatible = compatibles.Contains(n) || (manquants.Count == 0 && n >= ilotMinimal);
+            return new IlotCandidat(n, compatible, manquants, occupes.Contains(n), enAttente, temps, brasLignes);
         }).ToList();
     }
 
@@ -720,7 +731,11 @@ public sealed class StockageSql(IOptions<OptionsSql> options, IOptions<Parametre
         if (tableau is null) return null;
         var colonne = $"TpsMoyChgtI{(numero is 21 or 22 ? 2 : numero)}";
         if (!tableau.TryGetValue(colonne, out var v) || v is null) return null;
-        var chiffres = new string(v.ToString()!.TakeWhile(char.IsDigit).ToArray());
+        var texte = v.ToString()!.Trim();
+        // Colonne texte : des minutes ("12") ou une durée ("00:12", "00:12:30").
+        if (texte.Contains(':') && TimeSpan.TryParse(texte.Count(ch => ch == ':') == 1 ? $"{texte}:00" : texte, out var duree))
+            return duree.TotalMinutes >= 1 ? (int)Math.Round(duree.TotalMinutes) : null;
+        var chiffres = new string(texte.TakeWhile(char.IsDigit).ToArray());
         return int.TryParse(chiffres, out var minutes) && minutes > 0 ? minutes : null;
     }
 

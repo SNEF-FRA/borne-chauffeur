@@ -1,6 +1,7 @@
 import type { Textes } from './fr'
 
 type P = Record<string, string | number | null | undefined>
+const dans = (j: P[string]) => (Number(j) === 0 ? 'today' : Number(j) === 1 ? 'tomorrow' : `in ${j} days`)
 
 export const en: Textes = {
   app: 'Driver kiosk',
@@ -163,12 +164,12 @@ export const en: Textes = {
   controle: {
     ADR_ABSENT: () => 'ADR certificate not recorded',
     ADR_EXPIRE: (p: P) => `ADR certificate expired on ${p.date}`,
-    ADR_BIENTOT: (p: P) => `Your ADR certificate expires in ${p.jours} day(s) (${p.date}). Remember to renew it.`,
+    ADR_BIENTOT: (p: P) => `Your ADR certificate expires ${dans(p.jours)} (${p.date}). Remember to renew it.`,
     ACCUEIL_ABSENT: () => 'Safety induction not recorded',
     ACCUEIL_EXPIRE: (p: P) => `Safety induction expired on ${p.date}`,
-    ACCUEIL_BIENTOT: (p: P) => `Your safety induction expires in ${p.jours} day(s) (${p.date}).`,
+    ACCUEIL_BIENTOT: (p: P) => `Your safety induction expires ${dans(p.jours)} (${p.date}).`,
     PERMIS_EXPIRE: (p: P) => `Driving licence expired on ${p.date}`,
-    PERMIS_BIENTOT: (p: P) => `Your driving licence expires in ${p.jours} day(s) (${p.date}).`,
+    PERMIS_BIENTOT: (p: P) => `Your driving licence expires ${dans(p.jours)} (${p.date}).`,
     CT_EXPIRE: (p: P) => `Roadworthiness test of ${p.cible} expired${p.date ? ` on ${p.date}` : ''}`,
     CT_BIENTOT: (p: P) => `Roadworthiness test of ${p.cible} due before ${p.date}.`,
     AGREMENT_ABSENT: (p: P) => `ADR approval of ${p.cible} not recorded`,

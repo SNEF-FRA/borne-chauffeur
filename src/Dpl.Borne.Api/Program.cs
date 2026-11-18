@@ -52,6 +52,13 @@ app.Use(async (ctx, suivant) =>
         ctx.Response.StatusCode = e.Statut;
         await ctx.Response.WriteAsJsonAsync(new { code = e.Code, details = e.Details });
     }
+    catch (BadHttpRequestException e) when (!ctx.Response.HasStarted)
+    {
+        // Corps de requête illisible : erreur de l'appelant, pas de la base.
+        app.Logger.LogWarning("Requête invalide sur {Methode} {Chemin} : {Message}", ctx.Request.Method, ctx.Request.Path, e.Message);
+        ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+        await ctx.Response.WriteAsJsonAsync(new { code = "REQUETE_INVALIDE" });
+    }
     catch (Exception e) when (!ctx.Response.HasStarted && e is not OperationCanceledException)
     {
         app.Logger.LogError(e, "Erreur sur {Methode} {Chemin}", ctx.Request.Method, ctx.Request.Path);

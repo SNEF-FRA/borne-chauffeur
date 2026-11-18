@@ -53,6 +53,17 @@ jobs:
           cp docs/installation.md docs/compte-sql.sql publication/borne-chauffeur/
           cp web/dist-demo/index.html publication/borne-chauffeur-demo.html
 
+      - name: Démarrage de l'API publiée (mode démonstration)
+        run: |
+          cd publication/borne-chauffeur
+          ASPNETCORE_URLS=http://127.0.0.1:5080 dotnet Dpl.Borne.Api.dll > ../api.log 2>&1 &
+          API_PID=$!
+          for i in $(seq 1 30); do curl -fs http://127.0.0.1:5080/api/sante && break; sleep 1; done
+          curl -fs "http://127.0.0.1:5080/api/borne?borne=SEICHAUFF01"
+          curl -fs -o /dev/null "http://127.0.0.1:5080/?borne=SEICHAUFF01"
+          kill $API_PID || true
+          cat ../api.log
+
       - name: Paquet à installer sur le serveur
         uses: actions/upload-artifact@v4
         with:
