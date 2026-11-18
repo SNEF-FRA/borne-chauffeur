@@ -37,7 +37,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$Dossier = $PSScriptRoot,
+    [string]$Dossier,
     [string]$NomSite = 'BorneChauffeur',
     [int]$Port = 0,
     [string]$Empreinte,
@@ -46,6 +46,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# Dossier du script. $PSScriptRoot est vide dans les valeurs par défaut des paramètres sous Windows PowerShell 5.1 :
+# on le calcule ici, dans le corps du script.
+$dossierScript = if ($PSScriptRoot) { $PSScriptRoot } elseif ($MyInvocation.MyCommand.Path) { Split-Path -Parent $MyInvocation.MyCommand.Path } else { (Get-Location).Path }
+if (-not $Dossier) { $Dossier = $dossierScript }
 if ($Port -eq 0) { $Port = if ($SansHttps) { 8080 } else { 443 } }
 $Dossier = (Resolve-Path $Dossier).Path
 
