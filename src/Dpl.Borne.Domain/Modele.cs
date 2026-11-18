@@ -46,7 +46,8 @@ public sealed record Vehicule(
     string? Message,
     string? TypeChargement,
     int? IdEnergie,
-    IReadOnlyList<Compartiment> Compartiments)
+    IReadOnlyList<Compartiment> Compartiments,
+    bool MesuresComplementairesEnergie = false)
 {
     public bool EstAvant => Type is TypeVehicule.Porteur or TypeVehicule.Tracteur;
     public bool EstArriere => Type is TypeVehicule.Citerne or TypeVehicule.Remorque;
