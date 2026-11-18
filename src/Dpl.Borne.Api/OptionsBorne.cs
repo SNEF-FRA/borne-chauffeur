@@ -16,7 +16,8 @@ public sealed class OptionsBorne
     public int DelaiInactiviteSecondes { get; set; } = 180;
 
     /// <summary>Langues proposées à l'accueil, dans l'ordre d'affichage.</summary>
-    public string[] Langues { get; set; } = ["fr", "en", "es", "pt", "de", "it", "nl", "pl", "ro"];
+    // Pas de valeur par défaut ici : la liaison de configuration ajouterait les valeurs de appsettings.json à celles-ci.
+    public string[] Langues { get; set; } = [];
 
     /// <summary>Affiche les badges de démonstration à l'accueil (à n'activer qu'avec la source "Demo").</summary>
     public bool BadgesDemoVisibles { get; set; }

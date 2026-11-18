@@ -22,3 +22,5 @@ appsettings.*.Local.json
 .DS_Store
 Thumbs.db
 *.log
+dist-demo/
+src/Dpl.Borne.Api/wwwroot/
