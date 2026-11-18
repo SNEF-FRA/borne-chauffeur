@@ -13,11 +13,43 @@ Chaque construction GitHub Actions produit l'artefact `borne-chauffeur-<commit>`
 
 ## 2. Serveur
 
-Prérequis : Windows Server 2019 ou plus récent, IIS, [ASP.NET Core Hosting Bundle .NET 10](https://dotnet.microsoft.com/download/dotnet/10.0).
+Prérequis : Windows Server 2019 ou plus récent (un poste Windows 10 ou 11 convient pour la recette) et le [Hosting Bundle ASP.NET Core .NET 10](https://dotnet.microsoft.com/download/dotnet/10.0) (colonne « ASP.NET Core Runtime », lien « Hosting Bundle »).
 
-1. Copier le dossier dans `D:\Applications\BorneChauffeur` (par exemple).
-2. Dans IIS, créer un pool d'applications `BorneChauffeur` : « Aucun code managé », mode pipeline intégré, démarrage « AlwaysRunning ».
-3. Créer le site (ou une application) pointant sur ce dossier, avec ce pool, en **HTTPS** (certificat interne). Le lecteur de badge lu par le navigateur exige une adresse sécurisée ; voir l'option du §4 si HTTPS n'est pas possible tout de suite.
+### Premier essai, sans IIS
+
+Pour vérifier l'accès à la base avant toute installation, sur un poste qui a le runtime .NET 10 :
+
+```
+cd D:\Applications\BorneChauffeur
+dotnet Dpl.Borne.Api.dll --urls http://localhost:5080
+```
+
+Puis ouvrir, sur ce même poste, `http://localhost:5080/?borne=SEICHAUFF01`. L'adresse `localhost` compte comme une adresse sécurisée : le lecteur de badge branché sur ce poste peut être lu sans certificat. Créer d'abord `appsettings.Local.json` (étape 4 ci-dessous) pour travailler sur la base ; sans ce fichier, l'application tourne en démonstration.
+
+### Installation dans IIS
+
+Le script `installer-serveur.ps1`, livré dans le dossier de l'application, fait toute l'installation : rôle IIS, pool d'applications, droits sur le dossier, certificat HTTPS, site, pare-feu. Il peut être relancé sans risque.
+
+1. Installer le Hosting Bundle .NET 10. Si IIS est installé après lui (par le script, par exemple), relancer l'installateur du Hosting Bundle et choisir « Réparer » : le script le signale.
+2. Copier le dossier de l'application dans `D:\Applications\BorneChauffeur` (par exemple).
+3. Ouvrir PowerShell **en tant qu'administrateur** (clic droit sur le menu Démarrer → « Terminal (administrateur) ») et lancer :
+
+```
+cd D:\Applications\BorneChauffeur
+powershell -ExecutionPolicy Bypass -File .\installer-serveur.ps1
+```
+
+Le script affiche à la fin l'adresse des bornes, par exemple `https://SRVBORNE/?borne=SEICHAUFF01`, et vérifie que `/api/sante` répond.
+
+**Le certificat.** Le lecteur de badge lu par le navigateur exige une adresse `https` dont le certificat est reconnu par la borne. Sans paramètre, le script crée un certificat « auto-signé » : un certificat que le serveur fabrique pour lui-même, valable 5 ans, pour son nom et ses adresses IP. Il l'exporte dans `certificat-borne-chauffeur.cer`, qu'il faut installer une fois sur chaque borne (§4). Variantes :
+
+| Cas | Commande |
+| --- | --- |
+| Les bornes joignent le serveur par un autre nom ou une autre adresse | `.\installer-serveur.ps1 -NomsServeur SRVBORNE, srvborne.dpl.local, 172.16.80.10` |
+| Le service informatique fournit un certificat (déjà installé dans « Ordinateur local > Personnel ») | `.\installer-serveur.ps1 -Empreinte <empreinte du certificat>` ; rien à installer sur les bornes |
+| Le port 443 est déjà pris | `.\installer-serveur.ps1 -Port 8443` |
+| Pas de HTTPS pour l'instant | `.\installer-serveur.ps1 -SansHttps` (port 8080) ; stratégie Edge `OverrideSecurityRestrictionsOnInsecureOrigin` obligatoire sur les bornes (§4) |
+
 4. Créer `appsettings.Local.json` à côté de `appsettings.json` (ce fichier n'est jamais versionné) :
 
 ```json
@@ -28,6 +60,8 @@ Prérequis : Windows Server 2019 ou plus récent, IIS, [ASP.NET Core Hosting Bun
   }
 }
 ```
+
+Le fichier n'est lu qu'au démarrage : après l'avoir créé ou modifié, redémarrer le site (Gestionnaire IIS → site `BorneChauffeur` → Redémarrer) ou relancer le script. En authentification Windows, c'est l'identité du pool (`IIS AppPool\BorneChauffeur`) qui se connecte à SQL Server sous IIS, et votre propre compte Windows lors du premier essai sans IIS.
 
 Avec un compte SQL au lieu de l'authentification Windows : `User Id=borne_chauffeur;Password=…` à la place de `Integrated Security=true`. Ne jamais réutiliser le compte `sa`.
 
@@ -43,6 +77,7 @@ Les avertissements et erreurs techniques vont dans le journal d'événements Win
 
 ## 4. Bornes (Windows 10/11, écran tactile 1920 × 1080)
 
+1. Certificat : copier sur la borne `certificat-borne-chauffeur.cer` et `installer-certificat-borne.ps1`, puis, dans PowerShell ouvert en tant qu'administrateur : `powershell -ExecutionPolicy Bypass -File .\installer-certificat-borne.ps1 -Adresse https://<serveur>`. Sans script : double-cliquer sur le fichier `.cer` → « Installer le certificat » → « Ordinateur local » → « Placer tous les certificats dans le magasin suivant » → « Autorités de certification racines de confiance ». Inutile avec un certificat du service informatique.
 1. Le nom de la borne dans l'adresse doit être celui de la table `BORNE` : `https://<serveur>/?borne=SEICHAUFF01` (ou `SEICHAUFF02`). Il sert au journal, à l'historique et aux réservations de quota (le dernier chiffre donne l'emplacement 1 ou 2, comme en v1.6).
 2. Mode kiosque : Paramètres → Comptes → Autres utilisateurs → Configurer une borne → Microsoft Edge, « affichage interactif », avec l'adresse ci-dessus.
 3. Stratégies Edge (GPO ou Intune), à valider sur la borne pilote :
