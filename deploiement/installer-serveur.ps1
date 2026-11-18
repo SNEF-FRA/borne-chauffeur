@@ -62,6 +62,13 @@ Etape "Dossier de l'application"
 if (-not (Test-Path (Join-Path $Dossier 'Dpl.Borne.Api.dll'))) {
     Arret "Dpl.Borne.Api.dll introuvable dans $Dossier. Lancez le script depuis le dossier de l'application ou précisez -Dossier."
 }
+# Un dossier bin\Debug ou bin\Release de Visual Studio n'est pas installable : il n'a ni web.config (IIS renverrait 404)
+# ni l'interface (wwwroot). Il faut le paquet publié par la CI.
+if (-not (Test-Path (Join-Path $Dossier 'web.config')) -or -not (Test-Path (Join-Path $Dossier 'wwwroot\index.html'))) {
+    Arret ("$Dossier n'est pas le paquet à installer : web.config ou wwwroot\index.html manque (dossier de compilation ?).`n" +
+        "Téléchargez l'artefact « borne-chauffeur-<commit> » : GitHub, dépôt SNEF-FRA/borne-chauffeur, onglet Actions,`n" +
+        "dernière exécution réussie sur main, rubrique Artifacts. Décompressez-le, puis relancez ce script depuis ce dossier.")
+}
 # Fichiers téléchargés depuis GitHub : Windows peut les bloquer.
 Get-ChildItem $Dossier -Recurse -File | Unblock-File
 Ok $Dossier
