@@ -15,11 +15,15 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$Certificat = (Join-Path $PSScriptRoot 'certificat-borne-chauffeur.cer'),
+    [string]$Certificat,
     [string]$Adresse
 )
 
 $ErrorActionPreference = 'Stop'
+# Dossier du script. $PSScriptRoot est vide dans les valeurs par défaut des paramètres sous Windows PowerShell 5.1 :
+# on le calcule ici, dans le corps du script.
+$dossierScript = if ($PSScriptRoot) { $PSScriptRoot } elseif ($MyInvocation.MyCommand.Path) { Split-Path -Parent $MyInvocation.MyCommand.Path } else { (Get-Location).Path }
+if (-not $Certificat) { $Certificat = Join-Path $dossierScript 'certificat-borne-chauffeur.cer' }
 if (-not (Test-Path $Certificat)) { Write-Host "Fichier introuvable : $Certificat" -ForegroundColor Red; exit 1 }
 
 $cert = Import-Certificate -FilePath $Certificat -CertStoreLocation Cert:\LocalMachine\Root
