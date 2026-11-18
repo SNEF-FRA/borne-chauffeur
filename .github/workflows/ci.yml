@@ -34,6 +34,18 @@ jobs:
       - name: Compiler (avec SQL Server)
         run: dotnet build BorneChauffeur.slnx -c Release --no-restore
 
+      - name: Scripts d'installation PowerShell (syntaxe)
+        shell: pwsh
+        run: |
+          $ko = 0
+          Get-ChildItem deploiement -Filter *.ps1 | ForEach-Object {
+            $jetons = $null; $erreurs = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$jetons, [ref]$erreurs) | Out-Null
+            if ($erreurs) { $erreurs | ForEach-Object { Write-Host "$($_.Extent.File):$($_.Extent.StartLineNumber) $($_.Message)" }; $ko++ }
+            else { Write-Host "$($_.Name) : syntaxe correcte" }
+          }
+          if ($ko) { exit 1 }
+
       - name: Tests des règles métier
         run: dotnet test tests/Dpl.Borne.Domain.Tests/Dpl.Borne.Domain.Tests.csproj -c Release --no-build --logger "trx;LogFileName=regles.trx" --results-directory resultats
 
@@ -50,7 +62,7 @@ jobs:
           dotnet publish src/Dpl.Borne.Api/Dpl.Borne.Api.csproj -c Release --no-build -o publication/borne-chauffeur
           mkdir -p publication/borne-chauffeur/wwwroot
           cp -r web/dist/. publication/borne-chauffeur/wwwroot/
-          cp docs/installation.md docs/compte-sql.sql publication/borne-chauffeur/
+          cp docs/installation.md docs/compte-sql.sql deploiement/*.ps1 publication/borne-chauffeur/
           cp web/dist-demo/index.html publication/borne-chauffeur-demo.html
 
       - name: Démarrage de l'API publiée (mode démonstration)
